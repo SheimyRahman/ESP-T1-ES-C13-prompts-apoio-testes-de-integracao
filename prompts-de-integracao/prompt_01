@@ -13,12 +13,12 @@ Prompt estruturado **zero-shot**: informa papel, contexto, regras e formato dese
 ## Prompt utilizado
 
 > Você é uma pessoa engenheira de QA sênior, especialista em testes de integração de APIs REST em Go. 
-> Gere testes de integração para `POST /v1/orders`, que integra com `inventory` e `payments`. 
-> Use apenas este contrato:
-> - sucesso reserva estoque, autoriza pagamento, persiste o pedido e retorna 201 com `orderId`; 
-> - estoque insuficiente retorna 409 sem chamar pagamento nem persistir;
-> - pagamento recusado retorna 422 e libera a reserva, sem persistir pedido. 
-> A requisição tem `customerId`, lista de `{sku, quantity}`, `paymentToken` e `Idempotency-Key`. 
+Gere testes de integração para `POST /v1/orders`, que integra com `inventory` e `payments`. 
+Use apenas este contrato:
+- sucesso reserva estoque, autoriza pagamento, persiste o pedido e retorna 201 com `orderId`; 
+- estoque insuficiente retorna 409 sem chamar pagamento nem persistir;
+- pagamento recusado retorna 422 e libera a reserva, sem persistir pedido. 
+A requisição tem `customerId`, lista de `{sku, quantity}`, `paymentToken` e `Idempotency-Key`. 
 > Apresente uma tabela com identificador, objetivo, preparação/respostas dos serviços, requisição e verificações de resposta e efeitos colaterais. 
 > Inclua caminhos positivos/felizes e negativos; não invente endpoints ou regras além das informadas.
 
@@ -44,7 +44,7 @@ Instruir o modelo a não inventar regras ausentes.
 
 ## Observação sobre a estrutura do prompt
 
-Escrever o prompt em um único parágrafo também poderia gerar casos úteis, mas reunir papel, contexto, regras, tarefa e formato de saída em blocos facilita identificar cada requisito. Essa organização tende a tornar a resposta mais consistente, rastreável e simples de avaliar; não garante, por si só, uma saída melhor. Neste arquivo, a estrutura foi escolhida para destacar as restrições e reduzir ambiguidades.
+Escrever o prompt em um único parágrafo também poderia gerar casos úteis, mas reunir papel, contexto, regras, tarefa e formato de saída em blocos facilita identificar cada requisito. Essa organização tende a tornar a resposta mais consistente, rastreável e simples de avaliar; não garante, por si só, uma saída melhor. Neste arquivo, a estrutura escolhoda foi um meio-termo, para destacar as restrições e reduzir ambiguidades.
 
 ## Implementação sugerida em Go
 
