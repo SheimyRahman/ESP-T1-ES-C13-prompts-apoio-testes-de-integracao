@@ -4,7 +4,7 @@
 
 Um serviço `orders` em Go expõe `POST /v1/orders` e integra, por REST, com `inventory` (`POST /v1/reservations`) e `payments` (`POST /v1/authorizations`). O pedido contém `customerId`, itens (`sku`, `quantity`), `paymentToken` e o cabeçalho `Idempotency-Key`.
 
-Premissas do exercício: sucesso reserva estoque, autoriza pagamento e persiste o pedido (HTTP `201`); estoque insuficiente retorna `409`, sem pagamento ou persistência; pagamento recusado retorna `422`, libera a reserva e não persiste o pedido.
+Premissas: sucesso reserva estoque, autoriza pagamento e persiste o pedido (HTTP `201`); estoque insuficiente retorna `409`, sem pagamento ou persistência; pagamento recusado retorna `422`, libera a reserva e não persiste o pedido.
 
 ## Tipo de prompt
 
