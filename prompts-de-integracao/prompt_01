@@ -19,8 +19,8 @@ Use apenas este contrato:
 - estoque insuficiente retorna 409 sem chamar pagamento nem persistir;
 - pagamento recusado retorna 422 e libera a reserva, sem persistir pedido. 
 A requisição tem `customerId`, lista de `{sku, quantity}`, `paymentToken` e `Idempotency-Key`. 
-> Apresente uma tabela com identificador, objetivo, preparação/respostas dos serviços, requisição e verificações de resposta e efeitos colaterais. 
-> Inclua caminhos positivos/felizes e negativos; não invente endpoints ou regras além das informadas.
+Apresente uma tabela com identificador, objetivo, preparação/respostas dos serviços, requisição e verificações de resposta e efeitos colaterais. 
+Inclua caminhos positivos/felizes e negativos; não invente endpoints ou regras além das informadas.
 
 ## Casos gerados
 
