@@ -1,1 +1,56 @@
+# Prompt 2 — Falhas, idempotência e compensação
+
+## Cenário
+
+Um serviço `orders` em Go expõe `POST /v1/orders` e integra, por REST, com `inventory` (`POST /v1/reservations`) e `payments` (`POST /v1/authorizations`). O pedido contém `customerId`, itens (`sku`, `quantity`), `paymentToken` e o cabeçalho `Idempotency-Key`.
+
+Premissas: sucesso reserva estoque, autoriza pagamento e persiste pedido (HTTP `201`); pagamento recusado resulta em `422` e liberação da reserva; falha ou timeout de dependência resulta em `503`, sem pedido confirmado; repetir o mesmo conteúdo com a mesma chave não duplica efeitos.
+
+## Tipo de prompt
+
+Prompt de falhas com matriz de condições e efeitos colaterais, usando a técnica **few-shot**:
+
+## Prompt utilizado
+
+> Você é uma pessoa engenheira de QA sênior e testa integrações REST em Go.
+Para `POST /v1/orders`, use o contrato:
+- sucesso = reserva, autorização e persistência, HTTP 201; 
+- estoque insuficiente = HTTP 409 sem pagamento/persistência; pagamento recusado = HTTP 422 e liberação da reserva; 
+- falha/timeout de dependência = HTTP 503 e nenhum pedido confirmado; 
+- repetição da mesma `Idempotency-Key` com o mesmo corpo não duplica efeitos.
+>
+> Exemplo para nível de detalhe: se payment falha depois da reserva, verificar HTTP 503, tentativa de liberar a reserva, ausência de pedido persistido e ausência de resposta de sucesso.
+>
+> Gere casos distintos para timeout/falha de cada dependência, compensação, repetição idempotente e chave reutilizada com corpo diferente. Para cada caso, informe fase, respostas/timeout dos stubs, resultado HTTP, chamadas esperadas e chamadas proibidas. Use somente as regras fornecidas; marque como “decisão pendente” qualquer comportamento que o contrato não defina.
+
+## Casos gerados
+
+| ID | Falha/condição e preparação | Verificações esperadas |
+|---|---|---|
+| E1 | Inventory retorna `500` antes de reservar | `503`; não chamar payments; não persistir pedido |
+| E2 | Inventory excede o timeout antes de responder | `503`; não chamar payments; não persistir pedido |
+| E3 | Inventory reserva; payments retorna `500` | `503`; tentar liberar reserva; não persistir pedido |
+| E4 | Inventory reserva; payments excede o timeout | `503`; tentar liberar reserva; não persistir pedido; não retornar `201` |
+| E5 | Repetir duas vezes o mesmo pedido com a chave `k-200` | Mesmo `orderId`/resultado; uma reserva, uma autorização e um pedido persistido no total |
+| E6 | Reutilizar `k-200` com corpo diferente | **Decisão pendente:** contrato não define resposta; confirmar que não há segunda cobrança/reserva e decidir se a API rejeita com `409` ou outro status |
+
+## Avaliação humana breve, após primeira iteração:
+
+A matriz de falhas e o exemplo ampliaram a diversidade. Agora tem-se timeouts, compensação, idempotência e efeitos proibidos. O prompt também revelou uma lacuna: o comportamento para uma chave repetida com conteúdo diferente e que não estava especificado.
+
+**Ajustes que melhoraram o resultado:** 
+Pedir verificações negativas (do que não pode ocorrer);
+Distinguir a fase da falha;
+Especificar timeouts;
+Solicitar que lacunas apareçam como decisões pendentes. 
+
+Isso tudo acima, reduziu suposições.
+
+## Observação sobre a estrutura do prompt
+
+Escrever o prompt em um único parágrafo também poderia gerar casos úteis, mas reunir papel, contexto, regras, tarefa e formato de saída em blocos facilita identificar cada requisito. Essa organização tende a tornar a resposta mais consistente, rastreável e simples de avaliar; não garante, por si só, uma saída melhor. Neste arquivo, a estrutura foi escolhida (hibrida) para destacar as restrições e reduzir ambiguidades.
+
+## Implementação sugerida em Go
+
+Use `httptest.NewServer` para configurar respostas e atrasos dos serviços falsos e um repositório em memória para verificar persistência. Em cada subteste, confira status/body, contagem das chamadas, tentativas de compensação e estado final. Controle o timeout no cliente HTTP do serviço.
 
