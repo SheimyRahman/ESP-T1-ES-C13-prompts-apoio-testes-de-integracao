@@ -1,1 +1,52 @@
+# Prompt 1 — Cenários funcionais derivados do contrato
+
+## Cenário
+
+Um serviço `orders` em Go expõe `POST /v1/orders` e integra, por REST, com `inventory` (`POST /v1/reservations`) e `payments` (`POST /v1/authorizations`). O pedido contém `customerId`, itens (`sku`, `quantity`), `paymentToken` e o cabeçalho `Idempotency-Key`.
+
+Premissas do exercício: sucesso reserva estoque, autoriza pagamento e persiste o pedido (HTTP `201`); estoque insuficiente retorna `409`, sem pagamento ou persistência; pagamento recusado retorna `422`, libera a reserva e não persiste o pedido.
+
+## Tipo de prompt
+
+Prompt estruturado **zero-shot**: informa papel, contexto, regras e formato desejado, sem fornecer exemplo de saída.
+
+## Prompt utilizado
+
+> Você é uma pessoa engenheira de QA sênior, especialista em testes de integração de APIs REST em Go. 
+> Gere testes de integração para `POST /v1/orders`, que integra com `inventory` e `payments`. 
+> Use apenas este contrato:
+> - sucesso reserva estoque, autoriza pagamento, persiste o pedido e retorna 201 com `orderId`; 
+> - estoque insuficiente retorna 409 sem chamar pagamento nem persistir;
+> - pagamento recusado retorna 422 e libera a reserva, sem persistir pedido. 
+> A requisição tem `customerId`, lista de `{sku, quantity}`, `paymentToken` e `Idempotency-Key`. 
+> Apresente uma tabela com identificador, objetivo, preparação/respostas dos serviços, requisição e verificações de resposta e efeitos colaterais. 
+> Inclua caminhos positivos/felizes e negativos; não invente endpoints ou regras além das informadas.
+
+## Casos gerados
+
+| ID | Objetivo e preparação | Requisição | Verificações esperadas |
+|---|---|---|---|
+| F1 | Fluxo feliz; estoque reserva e pagamento autoriza | Pedido válido com um item e chave `k-100` | `201`, `orderId` presente; uma reserva, uma autorização e um pedido persistido |
+| F2 | Pedido com múltiplos itens; ambos os serviços aprovam | Dois SKUs válidos com quantidades positivas | `201`; todos os itens persistidos; uma operação de reserva e uma autorização |
+| F3 | Estoque insuficiente; inventory responde insuficiência | Item com quantidade acima do disponível | `409`; pagamento não chamado; pedido não persistido |
+| F4 | Pagamento recusado após reserva bem-sucedida | Pedido válido; payments responde recusado | `422`; liberação da reserva chamada; pedido não persistido |
+| F5 | Verificar propagação dos dados entre serviços | Inventory e payments aprovam; inspecionar requisições recebidas pelos stubs | SKU/quantidade e dados de pagamento correspondem à requisição; resposta `201` |
+
+## Avaliação humana breve, apos primeira iteração:
+
+O contrato explícito e o formato tabular enxuto produziram casos funcionais claros e rastreáveis, incluindo casos de sucesso, regras de negócio e rastreamento da passagem de dados. 
+A pouca diversidade concentrou-se apenas nos caminhos funcionais descritos.
+
+**Ajustes que melhoraram o resultado apos primeira iteração:**
+Explicitar códigos HTTP, adicionar efeitos colaterais esperados e proibidos; 
+Fixar o formato de saída; 
+Instruir o modelo a não inventar regras ausentes.
+
+## Observação sobre a estrutura do prompt
+
+Escrever o prompt em um único parágrafo também poderia gerar casos úteis, mas reunir papel, contexto, regras, tarefa e formato de saída em blocos facilita identificar cada requisito. Essa organização tende a tornar a resposta mais consistente, rastreável e simples de avaliar; não garante, por si só, uma saída melhor. Neste arquivo, a estrutura foi escolhida para destacar as restrições e reduzir ambiguidades.
+
+## Implementação sugerida em Go
+
+Use `httptest.NewServer` para simular as dependências REST e um repositório em memória para verificar persistência. Em cada subteste (`t.Run`), confira status/body, chamadas recebidas pelos stubs e estado final do repositório.
 
