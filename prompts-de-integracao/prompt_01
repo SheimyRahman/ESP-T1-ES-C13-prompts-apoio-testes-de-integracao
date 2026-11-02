@@ -8,7 +8,7 @@ Premissas: sucesso reserva estoque, autoriza pagamento e persiste o pedido (HTTP
 
 ## Tipo de prompt
 
-Prompt estruturado **zero-shot**: informa papel, contexto, regras e formato desejado, sem fornecer exemplo de saída.
+Prompt estruturado tecnica **zero-shot**:
 
 ## Prompt utilizado
 
